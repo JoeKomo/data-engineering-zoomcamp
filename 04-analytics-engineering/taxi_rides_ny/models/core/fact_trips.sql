@@ -23,7 +23,8 @@ dim_zones as (
     select * from {{ ref('dim_zones') }}
     where borough != 'Unknown'
 )
-select trips_unioned.tripid, 
+select 
+    trips_unioned.tripid, 
     trips_unioned.vendorid, 
     trips_unioned.service_type,
     trips_unioned.ratecodeid, 
@@ -48,9 +49,18 @@ select trips_unioned.tripid,
     trips_unioned.improvement_surcharge, 
     trips_unioned.total_amount, 
     trips_unioned.payment_type, 
-    trips_unioned.payment_type_description
-from trips_unioned
-inner join dim_zones as pickup_zone
-on trips_unioned.pickup_locationid = pickup_zone.locationid
-inner join dim_zones as dropoff_zone
-on trips_unioned.dropoff_locationid = dropoff_zone.locationid
+    CASE 
+        WHEN trips_unioned.payment_type = 1 THEN 'Credit card'
+        WHEN trips_unioned.payment_type = 2 THEN 'Cash'
+        WHEN trips_unioned.payment_type = 3 THEN 'No charge'
+        WHEN trips_unioned.payment_type = 4 THEN 'Dispute'
+        WHEN trips_unioned.payment_type = 5 THEN 'Unknown'
+        WHEN trips_unioned.payment_type = 6 THEN 'Voided trip'
+        ELSE 'EMPTY'
+    END AS payment_type_description
+from 
+    trips_unioned
+inner join 
+    dim_zones as pickup_zone ON trips_unioned.pickup_locationid = pickup_zone.locationid
+inner join 
+    dim_zones as dropoff_zone ON trips_unioned.dropoff_locationid = dropoff_zone.locationid
